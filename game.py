@@ -55,7 +55,7 @@ class HexBoard:
                 self.game_over = True
         else:
             warnings.warn(
-                'Illegal move: piece is trying to be set at an invalid location.'
+                'Illegal move: piece is trying to be set at an invalid location ({}).'.format(pos)
             )
             return False
         return True
@@ -91,8 +91,9 @@ class HexBoard:
         Returns:
             [Bool]
         """
-        if (not isinstance(pos, tuple) and len(pos) < 2 and 
-            not isinstance(pos[0], int) and not isinstance(pos[1], int)):
+
+        if (not isinstance(pos, tuple) or len(pos) != 2 or 
+            not isinstance(pos[0], int) or not isinstance(pos[1], int)):
             return False
         y, x = pos
         if (y >= 0 and y < self.size and x >= 0 and x < self.size and 
@@ -104,18 +105,30 @@ class HexBoard:
     def get_neighbors(self, pos):
         y, x = pos
         neighbors = []
-        if y-1 >= 0:
-            neighbors.append((y-1, x))
-        if y+1 < self.size:
-            neighbors.append((y+1, x))
-        if y-1 >= 0 and x+1 <= self.size-1:
-            neighbors.append((y-1, x+1))
-        if y+1 < self.size and x-1 >= 0:
-            neighbors.append((y+1, x-1))
-        if x+1 < self.size:
-            neighbors.append((y, x+1))
-        if x-1 >= 0:
-            neighbors.append((y, x-1))
+
+        # Check if sarting position 
+        if y == sys.maxsize:
+            neighbors = [(self.size-1,i) for i in range(self.size)]
+        elif y == -sys.maxsize:
+            neighbors = [(0,i) for i in range(self.size)]
+        elif x == sys.maxsize:
+            neighbors = [(i,self.size-1) for i in range(self.size)]
+        elif x == -sys.maxsize:
+            neighbors = [(i,0) for i in range(self.size)]
+        # Position inside board
+        else:
+            if y-1 >= 0:
+                neighbors.append((y-1, x))
+            if y+1 < self.size:
+                neighbors.append((y+1, x))
+            if y-1 >= 0 and x+1 <= self.size-1:
+                neighbors.append((y-1, x+1))
+            if y+1 < self.size and x-1 >= 0:
+                neighbors.append((y+1, x-1))
+            if x+1 < self.size:
+                neighbors.append((y, x+1))
+            if x-1 >= 0:
+                neighbors.append((y, x-1))
         return neighbors
 
     def border(self, color, move):
@@ -151,13 +164,13 @@ class HexBoard:
     def print(self):
         """Print the board to console"""
         board_string = ''
-        for r in range(self.size):
-            board_string += (r-1)*' '
-            for q in range(self.size):
+        for y in range(self.size):
+            board_string += (y-1)*' '
+            for x in range(self.size):
                 board_string += ' '
-                if self.board[q,r] == HexBoard.BLUE:
+                if self.board[y,x] == HexBoard.BLUE:
                     board_string += self.char_player1
-                elif self.board[q,r] == HexBoard.RED:
+                elif self.board[y,x] == HexBoard.RED:
                     board_string += self.char_player2
                 else: 
                     board_string += self.char_empty
@@ -234,7 +247,54 @@ class Client(HexBoard):
     def robot_make_move(self):
         if self.opponent == 'random':
             self.random_move_generator()
-    
+
+
+def dijkstra(board, player):
+
+    if player == board.BLUE:
+        initial = (0, -sys.maxsize)
+        endstate = [(i, board.size-1) for i in range(board.size)]
+        opponent = board.RED
+    elif player == board.RED:
+        initial = (-sys.maxsize, 0)
+        endstate = [(board.size-1, i) for i in range(board.size)]
+        opponent = board.BLUE
+    else:
+        raise RuntimeError('Hier gaat wat mis...')
+
+    visited = {}
+    queue = {initial: 0}
+
+    while queue: 
+        state = min(queue, key=queue.get)
+
+        if state in endstate:
+            return queue[state]
+
+        neighbors = board.get_neighbors(state)
+
+        for n in neighbors:
+
+            if n in visited:
+                continue
+            if board.board[n] == opponent:
+                continue
+
+            if board.board[n] == player:
+                score = queue[state] 
+            else:
+                score = queue[state] + 1
+            
+            if n in queue:
+                if queue[n] > score:
+                    queue[n] = score
+                # else: new value higher than queued value
+            else: # n not in queue
+                queue[n] = score
+
+        visited[state] = queue[state]
+        del queue[state]
+
 def play(opponent, board_size):
     game = Client(opponent=opponent, size=board_size)
 
