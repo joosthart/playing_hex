@@ -3,15 +3,26 @@ from algorithms import alphabeta
 
 import numpy as np
 
+
 class HexRobot:
 
     def __init__(self, algorithm, robot_color, opponent_color, **kwargs):
         self.algorithm = algorithm
         self.robot_color = robot_color
         self.opponent_color = opponent_color
+        self.alpha_beta_search_depth = kwargs.get('depth')
+
+        if not self.alpha_beta_search_depth:
+            self.alpha_beta_search_depth = 3
 
     def best_move_alphabeta(self, board):
-        move, _ = alphabeta(board, self.robot_color, self.opponent_color)
+        print(self.alpha_beta_search_depth)
+        move, _ = alphabeta(
+            board, 
+            self.robot_color,
+            self.opponent_color,
+            depth=self.alpha_beta_search_depth
+        )
         return move
 
     def random_move(self, board):

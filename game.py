@@ -256,12 +256,12 @@ class HumanClient():
         board.set_piece(move, color=self.color)
     
 
-def play(opponent, board_size):
+def play(opponent, board_size, level=3):
     board = HexBoard(board_size)
 
-    # human = HumanClient(board.BLUE)
-    robot = HexRobot(opponent, board.RED, board.BLUE)
-    robot2 = HexRobot(opponent, board.BLUE, board.RED)
+    human = HumanClient(board.BLUE)
+    robot = HexRobot(opponent, board.RED, board.BLUE, depth=level)
+
 
     print('Let the game begin!')
     print(
@@ -273,7 +273,7 @@ def play(opponent, board_size):
     print()
     board.print()
     while not board.is_game_over():
-        robot2.make_move(board)
+        human.make_move(board)
         robot.make_move(board)
         board.print()
 
