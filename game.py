@@ -206,7 +206,7 @@ class HexBoard:
 
 
 class HumanClient():
-
+    # TODO Move to another module
     def __init__(self, color):
         self.color = color
 
