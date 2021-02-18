@@ -259,8 +259,9 @@ class HumanClient():
 def play(opponent, board_size):
     board = HexBoard(board_size)
 
-    human = HumanClient(board.BLUE)
+    # human = HumanClient(board.BLUE)
     robot = HexRobot(opponent, board.RED, board.BLUE)
+    robot2 = HexRobot(opponent, board.BLUE, board.RED)
 
     print('Let the game begin!')
     print(
@@ -272,7 +273,7 @@ def play(opponent, board_size):
     print()
     board.print()
     while not board.is_game_over():
-        human.make_move(board)
+        robot2.make_move(board)
         robot.make_move(board)
         board.print()
 

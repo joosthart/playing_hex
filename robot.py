@@ -6,7 +6,7 @@ import numpy as np
 class HexRobot:
 
     def __init__(self, algorithm, robot_color, opponent_color, **kwargs):
-        self.algorithsm = algorithm
+        self.algorithm = algorithm
         self.robot_color = robot_color
         self.opponent_color = opponent_color
 

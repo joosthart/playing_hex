@@ -1,7 +1,8 @@
 import sys
 
 
-from game import HexBoard, dijkstra, alphabeta
+from game import HexBoard
+from algorithms import dijkstra, alphabeta
 
 def test_boarder():
     board = HexBoard(size=3)
@@ -39,7 +40,7 @@ def test_neighbors():
 
     board = HexBoard(size=5)
 
-    for i in board.get_neighbors((1, 2)):
+    for i in board.get_neighbors((0, 2)):
         board.set_piece(i, board.RED)
 
     board.print()
@@ -140,6 +141,6 @@ def test_alphabeta():
 if __name__ == '__main__':
     # test_boarder()
     # test_dijkstra()
-    # test_neighbors()
+    test_neighbors()
     # test_win()
-    test_alphabeta()
+    # test_alphabeta()
