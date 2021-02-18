@@ -1,12 +1,12 @@
 import sys
 
 
-from game import HexBoard, dijkstra
+from game import HexBoard, dijkstra, alphabeta
 
 def test_boarder():
-    board = HexBoard(size=5)
+    board = HexBoard(size=3)
 
-    for i in board.get_neighbors((+sys.maxsize, 0)):
+    for i in board.get_neighbors((0, -sys.maxsize)):
         board.set_piece(i, board.RED)
 
     board.print()
@@ -35,8 +35,111 @@ def test_dijkstra():
 
     board.print()
 
+def test_neighbors():
+
+    board = HexBoard(size=5)
+
+    for i in board.get_neighbors((1, 2)):
+        board.set_piece(i, board.RED)
+
+    board.print()
+
+
+def test_win():
+
+    board = HexBoard(size=5)
+
+    for i in range(5):
+        board.set_piece((0,i), board.RED)
+    
+    board.print()
+
+    print(board.is_game_over())
+
+    #############################################
+
+    board = HexBoard(size=5)
+
+    for i in range(5):
+        board.set_piece((0,i), board.BLUE)
+    
+    board.print()
+
+    print(board.is_game_over())
+
+    #############################################
+
+    board = HexBoard(size=5)
+
+    for i in range(5):
+        board.set_piece((i,0), board.BLUE)
+    
+    board.print()
+
+    print(board.is_game_over())
+
+    #############################################
+
+    board = HexBoard(size=5)
+
+    for i in range(5):
+        board.set_piece((i,0), board.RED)
+    
+    board.print()
+
+    print(board.is_game_over())
+
+    #############################################
+
+    board = HexBoard(size=3)
+
+    board.set_piece((2,0), board.BLUE)
+    board.set_piece((1,1), board.BLUE)
+    board.set_piece((1,2), board.BLUE)
+    
+    board.print()
+
+    print(dijkstra(board, board.BLUE))
+
+    print(board.is_game_over())
+
+
+def test_alphabeta():
+    board = HexBoard(size=4)
+
+    board.set_piece((1,1), board.BLUE)
+    board.set_piece((1,0), board.RED)
+
+    board.print()
+
+
+    while True:
+        print(20*'-' + '  TURN BLUE  ' + 20*'-')
+
+        best_move, g = alphabeta(board, board.BLUE, board.RED, depth=9)
+        board.set_piece(best_move, board.BLUE)
+        board.print()
+        print('score: ', g)
+
+        if board.check_win(board.BLUE):
+            print('win')
+            break
+
+        print(20*'-' + '  TURN RED   ' + 20*'-')
+
+        best_move, g = alphabeta(board, board.RED, board.BLUE, depth=9)
+        board.set_piece(best_move, board.RED)
+        board.print()
+        print('score: ', g)
+
+        if board.check_win(board.RED):
+            print('win')
+            break
 
 
 if __name__ == '__main__':
     # test_boarder()
-    test_dijkstra()
+    # test_dijkstra()
+    # test_neighbors()
+    # test_win()
+    test_alphabeta()

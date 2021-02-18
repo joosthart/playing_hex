@@ -1,9 +1,11 @@
+import copy
 import sys
 import warnings
 
 import numpy as np
 
 from robot import random_move_generator
+from algorithms import dijkstra, alphabeta
 
 class HexBoard:
     BLUE = 1
@@ -22,6 +24,8 @@ class HexBoard:
         return self.size
 
     def is_game_over(self):
+        if self.check_win(HexBoard.RED) or self.check_win(HexBoard.BLUE):
+            self.game_over = True
         return self.game_over
     
     def is_empty(self, pos):
@@ -49,15 +53,12 @@ class HexBoard:
         """
 
         # Check whether pos is a valid position
-        if not self.game_over and self.move_is_valid(pos):
+        if not self.move_is_valid(pos):
+            raise RuntimeWarning('cannot set piece: invalid move.')
+        else:
             self.board[pos] = player
             if self.check_win(HexBoard.RED) or self.check_win(HexBoard.BLUE):
-                self.game_over = True
-        else:
-            warnings.warn(
-                'Illegal move: piece is trying to be set at an invalid location ({}).'.format(pos)
-            )
-            return False
+                self.game_over = True            
         return True
     
     def unset_piece(self, pos, player):
@@ -131,31 +132,81 @@ class HexBoard:
                 neighbors.append((y, x-1))
         return neighbors
 
-    def border(self, color, move):
-        y,x = move
-        return (color == HexBoard.BLUE and y == self.size-1) or \
-               (color == HexBoard.RED and x == self.size-1)
+    # def border(self, color, move):
+    #     x,y = move
+    #     return (color == HexBoard.BLUE and y == self.size-1) or \
+    #            (color == HexBoard.BLUE and y == self.size+1) or \
+    #            (color == HexBoard.RED and x == self.size-1) or \
+    #            (color == HexBoard.RED and x == self.size+1)
 
-    def traverse(self, color, move, visited):
-        if not self.is_color(move, color) or (move in visited and visited[move]):
-            return False
-        if self.border(color, move):
-            return True
-        visited[move] = True
-        for n in self.get_neighbors(move):
-            if self.traverse(color, n, visited):
-                return True
-        return False
+
+    # def traverse(self, color, move, visited):
+    #     if not self.is_color(move, color) or (move in visited and visited[move]):
+    #         return False
+    #     if self.border(color, move):
+    #         return True
+    #     visited[move] = True
+    #     for n in self.get_neighbors(move):
+    #         if self.traverse(color, n, visited):
+    #             return True
+    #     return False
+
+    def shortest_path(self, color):
+        if color == self.BLUE:
+            initial = (0, -sys.maxsize)
+            endstate = [(i, self.size-1) for i in range(self.size)]
+            opponent = self.RED
+        elif color == self.RED:
+            initial = (-sys.maxsize, 0)
+            endstate = [(self.size-1, i) for i in range(self.size)]
+            opponent = self.BLUE
+
+        visited = {}
+        queue = {initial: 0}
+
+        while queue: 
+            state = min(queue, key=queue.get)
+
+            if state in endstate:
+                return queue[state]
+
+            neighbors = self.get_neighbors(state)
+
+            for n in neighbors:
+
+                if n in visited:
+                    continue
+                if self.board[n] == opponent:
+                    continue
+
+                if self.board[n] == color:
+                    score = queue[state] 
+                else:
+                    score = queue[state] + 1
+                
+                if n in queue:
+                    if queue[n] > score:
+                        queue[n] = score
+                    # else: new value higher than queued value
+                else: # n not in queue
+                    queue[n] = score
+
+            visited[state] = queue[state]
+            del queue[state]
 
     def check_win(self, color):
-        for i in range(self.size):
-            if color == HexBoard.BLUE:
-                move = (0, i)
-            else:
-                move = (i, 0)
-            if self.traverse(color, move, {}):
-                return True
-        return False
+        # for i in range(self.size):
+        #     if color == HexBoard.BLUE:
+        #         move = (0, i)
+        #     else:
+        #         move = (i, 0)
+        #     if self.traverse(color, move, {}):
+        #         return True
+        # return False
+        if self.shortest_path(color) == 0:
+            return True
+        else:
+            return False
 
     def get_move_list(self):
         """Return list of available moves"""
@@ -179,10 +230,11 @@ class HexBoard:
 
         print(board_string)
 
+
+
 class Client(HexBoard):
 
-    def __init__(self, opponent='random,', **kwargs):
-        self.opponent = opponent
+    def __init__(self, **kwargs):
         super(Client, self).__init__(**kwargs)
 
     def get_user_input(self, msg):
@@ -202,14 +254,13 @@ class Client(HexBoard):
         """
 
         # TODO import this from robot
-
         movelist = self.get_move_list()
         idx_move = np.random.randint(len(movelist))
-        # Move list is in [r,q] but set piece expects [q,r]
         self.set_piece(tuple(movelist[idx_move]), player=self.RED)
     
     def alpha_beta(self):
-        raise NotImplementedError
+        move, _ = alphabeta(self, self.RED, self.BLUE, depth=3)
+        self.set_piece(move, player=self.RED)
 
     def transform_user_input(self, user_input):
         """Transform user input to usefull format.
@@ -244,61 +295,16 @@ class Client(HexBoard):
             valid = self.move_is_valid(move)
         self.set_piece(move, player=self.BLUE)
     
-    def robot_make_move(self):
+    def robot_make_move(self, robot):
         if self.opponent == 'random':
             self.random_move_generator()
-
-
-def dijkstra(board, player):
-
-    if player == board.BLUE:
-        initial = (0, -sys.maxsize)
-        endstate = [(i, board.size-1) for i in range(board.size)]
-        opponent = board.RED
-    elif player == board.RED:
-        initial = (-sys.maxsize, 0)
-        endstate = [(board.size-1, i) for i in range(board.size)]
-        opponent = board.BLUE
-    else:
-        raise RuntimeError('Hier gaat wat mis...')
-
-    visited = {}
-    queue = {initial: 0}
-
-    while queue: 
-        state = min(queue, key=queue.get)
-
-        if state in endstate:
-            return queue[state]
-
-        neighbors = board.get_neighbors(state)
-
-        for n in neighbors:
-
-            if n in visited:
-                continue
-            if board.board[n] == opponent:
-                continue
-
-            if board.board[n] == player:
-                score = queue[state] 
-            else:
-                score = queue[state] + 1
-            
-            if n in queue:
-                if queue[n] > score:
-                    queue[n] = score
-                # else: new value higher than queued value
-            else: # n not in queue
-                queue[n] = score
-
-        visited[state] = queue[state]
-        del queue[state]
+        elif self.opponent =='alpha-beta':
+            self.alpha_beta()
 
 def play(opponent, board_size):
     game = Client(opponent=opponent, size=board_size)
 
-    print('Let\'s the game begin!')
+    print('Let the game begin!')
     print(
         'The human is playing as \"{}\" and the robot as \"{}\".'.format(
             game.char_player1, 
@@ -324,4 +330,4 @@ def play(opponent, board_size):
         print('We have a problem...')
 
 if __name__ == '__main__':
-    play('random', 5)
+    play('alpha-beta', 5)
