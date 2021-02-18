@@ -4,8 +4,8 @@ import warnings
 
 import numpy as np
 
-from robot import random_move_generator
-from algorithms import dijkstra, alphabeta
+
+from robot import HexRobot
 
 class HexBoard:
     BLUE = 1
@@ -40,13 +40,13 @@ class HexBoard:
             return HexBoard.EMPTY
         return self.board[pos]
 
-    def set_piece(self, pos, player):
+    def set_piece(self, pos, color):
         """Set a piece on the board at position [r,q].
 
         Args:
             pos (tup[int,int]): Position to place piece. Coordinates should be 
                 (row, column).
-            player (int): integer that indicates player.
+            color (int): integer that indicates color.
 
         Returns:
             [bool]: If move illegal, returns false. If legal move, returns True.
@@ -56,24 +56,24 @@ class HexBoard:
         if not self.move_is_valid(pos):
             raise RuntimeWarning('cannot set piece: invalid move.')
         else:
-            self.board[pos] = player
+            self.board[pos] = color
             if self.check_win(HexBoard.RED) or self.check_win(HexBoard.BLUE):
                 self.game_over = True            
         return True
     
-    def unset_piece(self, pos, player):
+    def unset_piece(self, pos, color):
         """Remove a piece from the board.
 
         Args:
             pos (tup[int,int]): Position to place piece. Coordinates should be 
                 (row, column).
-            player (int): integer that indicates player.
+            color (int): integer that indicates color.
 
         Returns:
             [bool]: If legal move, returns True. If position on board is empty,
                 returns False.
         """
-        if self.board[pos] == player:
+        if self.board[pos] == color:
             self.board[pos] = 0
             return True
         else:
@@ -132,25 +132,6 @@ class HexBoard:
                 neighbors.append((y, x-1))
         return neighbors
 
-    # def border(self, color, move):
-    #     x,y = move
-    #     return (color == HexBoard.BLUE and y == self.size-1) or \
-    #            (color == HexBoard.BLUE and y == self.size+1) or \
-    #            (color == HexBoard.RED and x == self.size-1) or \
-    #            (color == HexBoard.RED and x == self.size+1)
-
-
-    # def traverse(self, color, move, visited):
-    #     if not self.is_color(move, color) or (move in visited and visited[move]):
-    #         return False
-    #     if self.border(color, move):
-    #         return True
-    #     visited[move] = True
-    #     for n in self.get_neighbors(move):
-    #         if self.traverse(color, n, visited):
-    #             return True
-    #     return False
-
     def shortest_path(self, color):
         if color == self.BLUE:
             initial = (0, -sys.maxsize)
@@ -195,14 +176,6 @@ class HexBoard:
             del queue[state]
 
     def check_win(self, color):
-        # for i in range(self.size):
-        #     if color == HexBoard.BLUE:
-        #         move = (0, i)
-        #     else:
-        #         move = (i, 0)
-        #     if self.traverse(color, move, {}):
-        #         return True
-        # return False
         if self.shortest_path(color) == 0:
             return True
         else:
@@ -232,10 +205,10 @@ class HexBoard:
 
 
 
-class Client(HexBoard):
+class HumanClient():
 
-    def __init__(self, **kwargs):
-        super(Client, self).__init__(**kwargs)
+    def __init__(self, color):
+        self.color = color
 
     def get_user_input(self, msg):
         """Get user input through console
@@ -248,19 +221,6 @@ class Client(HexBoard):
         """
         resp = input(msg)
         return resp
-    
-    def random_move_generator(self):
-        """Random move generotor bot.
-        """
-
-        # TODO import this from robot
-        movelist = self.get_move_list()
-        idx_move = np.random.randint(len(movelist))
-        self.set_piece(tuple(movelist[idx_move]), player=self.RED)
-    
-    def alpha_beta(self):
-        move, _ = alphabeta(self, self.RED, self.BLUE, depth=3)
-        self.set_piece(move, player=self.RED)
 
     def transform_user_input(self, user_input):
         """Transform user input to usefull format.
@@ -278,7 +238,7 @@ class Client(HexBoard):
         else:
             return 
 
-    def user_make_move(self):
+    def make_move(self, board):
         """Query user to make move and set piece on board.
         """
         user_input = self.get_user_input(
@@ -286,45 +246,43 @@ class Client(HexBoard):
         )
         move = self.transform_user_input(user_input)
 
-        valid = self.move_is_valid(move)
+        valid = board.move_is_valid(move)
         while not valid:
             user_input = self.get_user_input(
                 'Invalid move, coordinate of next move: '
             )
             move = self.transform_user_input(user_input)
-            valid = self.move_is_valid(move)
-        self.set_piece(move, player=self.BLUE)
+            valid = board.move_is_valid(move)
+        board.set_piece(move, color=self.color)
     
-    def robot_make_move(self, robot):
-        if self.opponent == 'random':
-            self.random_move_generator()
-        elif self.opponent =='alpha-beta':
-            self.alpha_beta()
 
 def play(opponent, board_size):
-    game = Client(opponent=opponent, size=board_size)
+    board = HexBoard(board_size)
+
+    human = HumanClient(board.BLUE)
+    robot = HexRobot(opponent, board.RED, board.BLUE)
 
     print('Let the game begin!')
     print(
         'The human is playing as \"{}\" and the robot as \"{}\".'.format(
-            game.char_player1, 
-            game.char_player2
+            board.char_player1, 
+            board.char_player2
         )
     )
     print()
-    game.print()
-    while not game.is_game_over():
-        game.user_make_move()
-        game.robot_make_move()
-        game.print()
+    board.print()
+    while not board.is_game_over():
+        human.make_move(board)
+        robot.make_move(board)
+        board.print()
 
     print()
     print(80*'-')
     print()
 
-    if game.check_win(game.BLUE):
+    if board.check_win(board.BLUE):
         print('The human has won!')
-    elif game.check_win(game.RED):
+    elif board.check_win(board.RED):
         print('The robot has won...')
     else:
         print('We have a problem...')
