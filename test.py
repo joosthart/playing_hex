@@ -2,7 +2,9 @@ import sys
 
 
 from game import HexBoard
-from algorithms import dijkstra, alphabeta
+from algorithms import (
+    dijkstra, alphabeta, tt_alphabeta, TranspositionTablesAlphaBeta, AlphaBeta
+)
 
 def test_boarder():
     board = HexBoard(size=3)
@@ -113,14 +115,19 @@ def test_alphabeta():
 
     board.print()
 
+    engine = AlphaBeta()
 
     while True:
         print(20*'-' + '  TURN BLUE  ' + 20*'-')
 
-        best_move, g = alphabeta(board, board.BLUE, board.RED, depth=9)
+        best_move, g = engine.search(board, board.BLUE, board.RED, depth=3)
         board.set_piece(best_move, board.BLUE)
         board.print()
         print('score: ', g)
+        print('nodes searched: ', engine.n_searched)
+        print('cutoffs: ', engine.cutoffs)
+
+        engine.reset()
 
         if board.check_win(board.BLUE):
             print('win')
@@ -128,19 +135,65 @@ def test_alphabeta():
 
         print(20*'-' + '  TURN RED   ' + 20*'-')
 
-        best_move, g = alphabeta(board, board.RED, board.BLUE, depth=9)
+        best_move, g = alphabeta(board, board.RED, board.BLUE, depth=3)
         board.set_piece(best_move, board.RED)
         board.print()
         print('score: ', g)
+        print('nodes searched: ', engine.n_searched)
+        print('cutoffs: ', engine.cutoffs)
 
         if board.check_win(board.RED):
             print('win')
             break
 
+        engine.reset()
+
+def test_tt_alphabeta():
+    board = HexBoard(size=4)
+
+    board.set_piece((1,1), board.BLUE)
+    board.set_piece((1,0), board.RED)
+
+    board.print()
+
+    engine = TranspositionTablesAlphaBeta()
+
+    while True:
+        print(20*'-' + '  TURN BLUE  ' + 20*'-')
+
+        best_move, g = engine.search(board, board.BLUE, board.RED, depth=3)
+        board.set_piece(best_move[0], board.BLUE)
+        board.print()
+        print('score: ', g)
+        print('nodes searched: ', engine.n_searched)
+        print('cutoffs: ', engine.cutoffs)
+
+        if board.check_win(board.BLUE):
+            print('win')
+            break
+
+        engine.reset()
+
+        print(20*'-' + '  TURN RED   ' + 20*'-')
+
+        best_move, g = engine.search(board, board.RED, board.BLUE, depth=3)
+        board.set_piece(best_move[0], board.RED)
+        board.print()
+        print('score: ', g)
+        print('nodes searched: ', engine.n_searched)
+        print('cutoffs: ', engine.cutoffs)
+
+        if board.check_win(board.RED):
+            print('win')
+            break
+        
+        engine.reset()
+
 
 if __name__ == '__main__':
     # test_boarder()
     # test_dijkstra()
-    test_neighbors()
+    # test_neighbors()
     # test_win()
     # test_alphabeta()
+    test_tt_alphabeta()

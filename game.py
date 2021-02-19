@@ -4,7 +4,6 @@ import warnings
 
 import numpy as np
 
-
 from robot import HexRobot
 
 class HexBoard:
@@ -202,6 +201,9 @@ class HexBoard:
         board_string = board_string.strip()
 
         print(board_string)
+    
+    def hash_state(self):
+        return hash(self.board.tostring())
 
 
 
