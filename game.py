@@ -11,7 +11,8 @@ class HexBoard:
     RED = 2
     EMPTY = 3
 
-    def __init__(self, size, char_empty='o', char_player1='+', char_player2='x'):
+    def __init__(self, size, char_empty='o', char_player1='+', 
+                 char_player2='x'):
         self.size = size
         self.board = np.full((size, size), HexBoard.EMPTY, dtype=int)
         self.game_over=False
@@ -23,7 +24,8 @@ class HexBoard:
         return self.size
 
     def is_game_over(self):
-        if self.check_win(HexBoard.RED) or self.check_win(HexBoard.BLUE):
+        if (self.check_win(HexBoard.RED) or self.check_win(HexBoard.BLUE) or 
+            len(self.get_move_list())==0):
             self.game_over = True
         return self.game_over
     

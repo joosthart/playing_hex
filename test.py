@@ -1,9 +1,8 @@
 import sys
 
-
 from game import HexBoard
 from algorithms import (
-    dijkstra, alphabeta, tt_alphabeta, TranspositionTablesAlphaBeta, AlphaBeta
+    dijkstra, TranspositionTablesAlphaBeta, AlphaBeta
 )
 from robot import HexRobot
 
@@ -136,7 +135,7 @@ def test_alphabeta():
 
         print(20*'-' + '  TURN RED   ' + 20*'-')
 
-        best_move, g = alphabeta(board, board.RED, board.BLUE, depth=3)
+        best_move, g = engine.search(board, board.RED, board.BLUE, depth=3)
         board.set_piece(best_move, board.RED)
         board.print()
         print('score: ', g)
@@ -193,10 +192,7 @@ def test_tt_alphabeta():
 
 def test_iterative_deepening():
 
-    board = HexBoard(size=4)
-
-    board.set_piece((1,1), board.BLUE)
-    board.set_piece((1,0), board.RED)
+    board = HexBoard(size=5)
 
     board.print()
 
@@ -205,13 +201,16 @@ def test_iterative_deepening():
     while True:
         print(20*'-' + '  TURN BLUE  ' + 20*'-')
 
-        best_move, g = engine.iterative_deepening(board, board.BLUE, board.RED, 
-                                                  5)
+        best_move, g = engine.iterative_deepening(
+            board, 
+            board.BLUE, 
+            board.RED, 
+            3,
+            maxdepth=5
+        )
         board.set_piece(best_move[0], board.BLUE)
         board.print()
-        print('score: ', g)
-        print('nodes searched: ', engine.n_searched)
-        print('cutoffs: ', engine.cutoffs)
+        engine.print_summary()
 
         if board.check_win(board.BLUE):
             print('blue wins')
@@ -221,13 +220,11 @@ def test_iterative_deepening():
 
         print(20*'-' + '  TURN RED   ' + 20*'-')
 
-        best_move, g = engine.iterative_deepening(board, board.RED, board.BLUE, 
-                                                  5)
+
+        best_move, g = engine.search(board, board.RED, board.BLUE, depth=5)
         board.set_piece(best_move[0], board.RED)
         board.print()
-        print('score: ', g)
-        print('nodes searched: ', engine.n_searched)
-        print('cutoffs: ', engine.cutoffs)
+        engine.print_summary()
 
         if board.check_win(board.RED):
             print('red wins')
@@ -261,5 +258,5 @@ if __name__ == '__main__':
     # test_win()
     # test_alphabeta()
     # test_tt_alphabeta()
-    # test_iterative_deepening()
-    test_hexbot()
+    test_iterative_deepening()
+    # test_hexbot()

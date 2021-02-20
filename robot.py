@@ -1,8 +1,7 @@
 
-from algorithms import alphabeta, AlphaBeta
-
 import numpy as np
 
+from algorithms import AlphaBeta, random_heuristic
 
 class HexRobot:
 
@@ -11,11 +10,15 @@ class HexRobot:
         self.robot_color = robot_color
         self.opponent_color = opponent_color
         self.alpha_beta_search_depth = kwargs.get('depth')
+        self.heuristic = kwargs.get('heuristic')
 
         if self.algorithm == 'alpha-beta':
-            self.engine = AlphaBeta()
             if not self.alpha_beta_search_depth:
                 self.alpha_beta_search_depth = 3
+            if self.heuristic:
+                self.engine = AlphaBeta(heuristic=self.heuristic)
+            else:
+                self.engine = AlphaBeta()
         elif self.algorithm == 'random':
             pass
 
@@ -25,9 +28,8 @@ class HexRobot:
             board, 
             self.robot_color,
             self.opponent_color,
-            depth=min(empty_spaces,self.alpha_beta_search_depth)
+            depth=min(empty_spaces, self.alpha_beta_search_depth)
         )
-        print(move)
         return move
 
     def random_move(self, board):
