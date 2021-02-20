@@ -1,5 +1,5 @@
 
-from algorithms import alphabeta
+from algorithms import alphabeta, AlphaBeta
 
 import numpy as np
 
@@ -12,23 +12,28 @@ class HexRobot:
         self.opponent_color = opponent_color
         self.alpha_beta_search_depth = kwargs.get('depth')
 
-        if not self.alpha_beta_search_depth:
-            self.alpha_beta_search_depth = 3
+        if self.algorithm == 'alpha-beta':
+            self.engine = AlphaBeta()
+            if not self.alpha_beta_search_depth:
+                self.alpha_beta_search_depth = 3
+        elif self.algorithm == 'random':
+            pass
 
     def best_move_alphabeta(self, board):
-        print(self.alpha_beta_search_depth)
-        move, _ = alphabeta(
+        empty_spaces = len(board.get_move_list())
+        move, _ = self.engine.search(
             board, 
             self.robot_color,
             self.opponent_color,
-            depth=self.alpha_beta_search_depth
+            depth=min(empty_spaces,self.alpha_beta_search_depth)
         )
+        print(move)
         return move
 
     def random_move(self, board):
         movelist = board.get_move_list()
         idx_move = np.random.randint(len(movelist))
-        return tuple(movelist[idx_move])
+        return movelist[idx_move]
 
     def make_move(self, board):
         if self.algorithm == 'alpha-beta':

@@ -5,6 +5,7 @@ from game import HexBoard
 from algorithms import (
     dijkstra, alphabeta, tt_alphabeta, TranspositionTablesAlphaBeta, AlphaBeta
 )
+from robot import HexRobot
 
 def test_boarder():
     board = HexBoard(size=3)
@@ -234,6 +235,23 @@ def test_iterative_deepening():
         
         engine.reset()
 
+def test_hexbot():
+
+    board = HexBoard(size=4)
+
+    robot1 = HexRobot('alpha-beta', board.RED, board.BLUE, depth=5)
+    robot2 = HexRobot('random', board.BLUE, board.RED)
+
+    board.print()
+    while True:
+        robot1.make_move(board)
+        board.print()
+        if board.check_win(board.RED):
+            exit()
+        robot2.make_move(board)
+        if board.check_win(board.BLUE):
+            exit()
+        board.print()
 
 
 if __name__ == '__main__':
@@ -243,4 +261,5 @@ if __name__ == '__main__':
     # test_win()
     # test_alphabeta()
     # test_tt_alphabeta()
-    test_iterative_deepening()
+    # test_iterative_deepening()
+    test_hexbot()

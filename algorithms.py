@@ -63,6 +63,9 @@ def shortest_path_heuristic(board, player, opponent):
 
     return -(shortest_path_player - shortest_path_opponent)
 
+def random_heuristic():
+    pass
+
 
 class AlphaBeta:
 
@@ -75,7 +78,10 @@ class AlphaBeta:
 
     def search(self, board, player, opponent, maximize=True, depth=3, 
                alpha=-sys.maxsize, beta=sys.maxsize):
-        
+
+        if len(board.get_move_list()) < depth:
+            depth = len(board.get_move_list())
+
         self.n_searched +=1
         best_move = None
 
