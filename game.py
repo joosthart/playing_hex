@@ -182,7 +182,9 @@ class HexBoard:
 
     def get_move_list(self):
         """Return list of available moves"""
-        return np.argwhere(self.board == HexBoard.EMPTY).tolist()
+        return [
+            tuple(x) for x in np.argwhere(self.board == HexBoard.EMPTY).tolist()
+        ]
 
     def print(self):
         """Print the board to console"""

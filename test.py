@@ -161,7 +161,7 @@ def test_tt_alphabeta():
     while True:
         print(20*'-' + '  TURN BLUE  ' + 20*'-')
 
-        best_move, g = engine.search(board, board.BLUE, board.RED, depth=3)
+        best_move, g = engine.search(board, board.BLUE, board.RED, depth=1)
         board.set_piece(best_move[0], board.BLUE)
         board.print()
         print('score: ', g)
@@ -176,7 +176,7 @@ def test_tt_alphabeta():
 
         print(20*'-' + '  TURN RED   ' + 20*'-')
 
-        best_move, g = engine.search(board, board.RED, board.BLUE, depth=3)
+        best_move, g = engine.search(board, board.RED, board.BLUE, depth=1)
         board.set_piece(best_move[0], board.RED)
         board.print()
         print('score: ', g)
@@ -190,10 +190,57 @@ def test_tt_alphabeta():
         engine.reset()
 
 
+def test_iterative_deepening():
+
+    board = HexBoard(size=4)
+
+    board.set_piece((1,1), board.BLUE)
+    board.set_piece((1,0), board.RED)
+
+    board.print()
+
+    engine = TranspositionTablesAlphaBeta()
+
+    while True:
+        print(20*'-' + '  TURN BLUE  ' + 20*'-')
+
+        best_move, g = engine.iterative_deepening(board, board.BLUE, board.RED, 
+                                                  5)
+        board.set_piece(best_move[0], board.BLUE)
+        board.print()
+        print('score: ', g)
+        print('nodes searched: ', engine.n_searched)
+        print('cutoffs: ', engine.cutoffs)
+
+        if board.check_win(board.BLUE):
+            print('blue wins')
+            break
+
+        engine.reset()
+
+        print(20*'-' + '  TURN RED   ' + 20*'-')
+
+        best_move, g = engine.iterative_deepening(board, board.RED, board.BLUE, 
+                                                  5)
+        board.set_piece(best_move[0], board.RED)
+        board.print()
+        print('score: ', g)
+        print('nodes searched: ', engine.n_searched)
+        print('cutoffs: ', engine.cutoffs)
+
+        if board.check_win(board.RED):
+            print('red wins')
+            break
+        
+        engine.reset()
+
+
+
 if __name__ == '__main__':
     # test_boarder()
     # test_dijkstra()
     # test_neighbors()
     # test_win()
     # test_alphabeta()
-    test_tt_alphabeta()
+    # test_tt_alphabeta()
+    test_iterative_deepening()

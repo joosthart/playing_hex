@@ -1,5 +1,8 @@
 import copy
 import sys
+import time
+
+from utils import timeout
 
 
 def dijkstra(board, player):
@@ -85,7 +88,7 @@ class AlphaBeta:
             g = -sys.maxsize
             for move in board.get_move_list():
                 board_hyp = copy.deepcopy(board)
-                board_hyp.set_piece(tuple(move), player)
+                board_hyp.set_piece(move, player)
 
                 _, score = self.search(board_hyp, player, opponent, maximize=False,
                                        depth=depth-1, alpha=alpha, beta=beta)
@@ -105,7 +108,7 @@ class AlphaBeta:
             g = sys.maxsize
             for move in board.get_move_list():
                 board_hyp = copy.deepcopy(board)
-                board_hyp.set_piece(tuple(move), opponent)
+                board_hyp.set_piece(move, opponent)
 
                 _, score = self.search(board_hyp, player, opponent, maximize=True,
                                        depth=depth-1, alpha=alpha, beta=beta)
@@ -121,7 +124,7 @@ class AlphaBeta:
                 if g < beta:
                     beta = g
 
-        return tuple(best_move), g
+        return best_move, g
 
 
 class TranspositionTablesAlphaBeta:
@@ -155,7 +158,7 @@ class TranspositionTablesAlphaBeta:
 
         if hit:
             return hit, g, move
-        else:
+        else:            
             return False, None, move
 
     def store(self, board, depth, move, g, alpha, beta):
@@ -175,6 +178,13 @@ class TranspositionTablesAlphaBeta:
 
         self.tt[state_key] = (move, depth, g, state)
 
+    def _move_ordering(self, all_moves, best_moves):
+        for m in best_moves:
+            if m in all_moves:
+                all_moves.remove(m)
+                all_moves.insert(0,m)
+        return all_moves
+
     def search(self, board, player, opponent, maximize=True, depth=3,
                alpha=-sys.maxsize, beta=sys.maxsize):
 
@@ -190,13 +200,14 @@ class TranspositionTablesAlphaBeta:
         if depth <= 0:
             g = shortest_path_heuristic(board, player, opponent)
             board_hyp = copy.deepcopy(board)
-            return [], g
+
 
         elif maximize:
             g = -sys.maxsize
-            for move in tt_best_move + board.get_move_list():
+            ordered_move_list = self._move_ordering(board.get_move_list(), tt_best_move)
+            for move in ordered_move_list:
                 board_hyp = copy.deepcopy(board)
-                board_hyp.set_piece(tuple(move), player)
+                board_hyp.set_piece(move, player)
 
                 nextmove, score = self.search(board_hyp, player, opponent,
                                               maximize=False, depth=depth-1,
@@ -204,9 +215,9 @@ class TranspositionTablesAlphaBeta:
 
                 if score > g:
                     g = score
-                    best_move = [tuple(move)] + nextmove
+                    best_move = [move] + nextmove
                 elif best_move == []:
-                    best_move = [tuple(move)] + nextmove
+                    best_move = [move] + nextmove
 
                 if g >= beta:
                     self.cutoffs += 1
@@ -217,9 +228,10 @@ class TranspositionTablesAlphaBeta:
 
         else:  # Minimize
             g = sys.maxsize
-            for move in tt_best_move + board.get_move_list():
+            ordered_move_list = self._move_ordering(board.get_move_list(), tt_best_move)
+            for move in ordered_move_list:
                 board_hyp = copy.deepcopy(board)
-                board_hyp.set_piece(tuple(move), opponent)
+                board_hyp.set_piece(move, opponent)
 
                 nextmove, score = self.search(board_hyp, player, opponent,
                                               maximize=True, depth=depth-1,
@@ -227,9 +239,9 @@ class TranspositionTablesAlphaBeta:
 
                 if score < g:
                     g = score
-                    best_move = [tuple(move)] + nextmove
+                    best_move = [move] + nextmove
                 elif best_move == []:
-                    best_move = [tuple(move)] + nextmove
+                    best_move = [move] + nextmove
 
                 if g <= alpha:
                     self.cutoffs += 1
@@ -241,6 +253,22 @@ class TranspositionTablesAlphaBeta:
         self.store(board_hyp, depth, best_move, g, alpha, beta)
 
         return best_move, g
+
+
+
+    def iterative_deepening(self, board, player, opponent, maxtime, maxdepth=9):
+
+        t0 = time.time()
+        d=1
+        while d < maxdepth and time.time() - t0 < maxtime:
+            print(d)
+            move, g = self.search(board, player, opponent, depth=d)
+            print(move, g, self.n_searched)
+            # print(self.tt)
+            d+=1
+            
+        return move, g
+
 
 ################################################################################
 # DEPRECATED                                                                   #
@@ -261,7 +289,7 @@ def alphabeta(board, player, opponent, maximize=True, depth=3,
         g = -sys.maxsize
         for move in board.get_move_list():
             board_hyp = copy.deepcopy(board)
-            board_hyp.set_piece(tuple(move), player)
+            board_hyp.set_piece(move, player)
 
             _, score = alphabeta(board_hyp, player, opponent, maximize=False,
                                  depth=depth-1, alpha=alpha, beta=beta)
@@ -280,7 +308,7 @@ def alphabeta(board, player, opponent, maximize=True, depth=3,
         g = sys.maxsize
         for move in board.get_move_list():
             board_hyp = copy.deepcopy(board)
-            board_hyp.set_piece(tuple(move), opponent)
+            board_hyp.set_piece(move, opponent)
 
             _, score = alphabeta(board_hyp, player, opponent, maximize=True,
                                  depth=depth-1, alpha=alpha, beta=beta)
@@ -360,7 +388,7 @@ def tt_alphabeta(board, player, opponent, maximize=True, depth=3, tt={},
         g = -sys.maxsize
         for move in tt_best_move + board.get_move_list():
             board_hyp = copy.deepcopy(board)
-            board_hyp.set_piece(tuple(move), player)
+            board_hyp.set_piece(move, player)
 
             nextmove, score, tt = tt_alphabeta(board_hyp, player, opponent,
                                                maximize=False, depth=depth-1,
@@ -368,9 +396,9 @@ def tt_alphabeta(board, player, opponent, maximize=True, depth=3, tt={},
 
             if score > g:
                 g = score
-                best_move = [tuple(move)] + nextmove
+                best_move = [move] + nextmove
             elif best_move == []:
-                best_move = [tuple(move)] + nextmove
+                best_move = [move] + nextmove
 
             if g >= beta:
                 break
@@ -382,7 +410,7 @@ def tt_alphabeta(board, player, opponent, maximize=True, depth=3, tt={},
         g = sys.maxsize
         for move in tt_best_move + board.get_move_list():
             board_hyp = copy.deepcopy(board)
-            board_hyp.set_piece(tuple(move), opponent)
+            board_hyp.set_piece(move, opponent)
 
             nextmove, score, tt = tt_alphabeta(board_hyp, player, opponent,
                                                maximize=True, depth=depth-1,
@@ -390,9 +418,9 @@ def tt_alphabeta(board, player, opponent, maximize=True, depth=3, tt={},
 
             if score < g:
                 g = score
-                best_move = [tuple(move)] + nextmove
+                best_move = [move] + nextmove
             elif best_move == []:
-                best_move = [tuple(move)] + nextmove
+                best_move = [move] + nextmove
 
             if g <= alpha:
                 break
