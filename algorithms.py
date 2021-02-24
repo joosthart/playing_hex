@@ -3,6 +3,7 @@ import sys
 import time
 
 import numpy as np
+from numpy.core.numeric import roll
 
 def dijkstra(board, player):
 
@@ -147,7 +148,6 @@ class AlphaBeta:
                     beta = g
 
         return best_move, g
-
 
 class TranspositionTablesAlphaBeta:
 
@@ -333,5 +333,161 @@ class TranspositionTablesAlphaBeta:
                 tt_lookups=self.tt_lookups
             )
         )
-            
+
+class Node:
+    
+    def __init__(self, player_to_move, move=None, parent=None):
+        self.move = move
+        self.parent = parent
+        self.player_to_move = player_to_move
+
+        self.visited = 0
+        self.score = 0
+
+        self.children = []
+    
+    def add_child(self, child):
+        self.children.append(child)
+    
+    def is_fully_expanded(self):
+        if self.children and all(c.visited>0 for c in self.children):
+            return True
+        else:
+            return False
+
+
+class MonteCarloTreeSearch:
+
+    def __init__(self, maxiter=1000, maxtime=5, cp=1):
+        self.maxiter = maxiter
+        self.maxtime = maxtime
+        self.cp = 1
+
+    def best_child(self, node):
         
+        weights = [
+            c.score/c.visited + self.cp * np.sqrt(np.log(node.visited/c.visited))
+            for c in node.children
+        ]
+        
+        # Select best child randomly out equally good children
+        return node.children[np.argmax(weights == np.amax(weights))]
+
+    def get_most_visited_child(self, node):
+        visits = [c.visited for c in node.children]
+
+        # Select best child randomly out equally good children
+        return node.children[np.argmax(visits == np.amax(visits))]
+
+    def make_node_move(self, node, board):
+        if node.player_to_move == self.player_to_move:
+            board.set_piece(node.move, self.opponent)
+        else:
+            board.set_piece(node.move, self.player_to_move)
+
+    def select(self):
+        
+        node = self.root
+        board_hyp = copy.deepcopy(self.root_board)
+
+        while node.is_fully_expanded():
+            node = self.best_child(node)
+            self.make_node_move(node, board_hyp)
+
+            if node.visited == 0:
+                return node, board_hyp
+        
+        if not node.children:
+            self.expand(node, board_hyp)
+        
+        if node.children:
+            node = np.random.choice(node.children)
+            self.make_node_move(node, board_hyp)
+
+        return node, board_hyp
+
+    def expand(self, node, board):
+        if node.player_to_move == self.player_to_move:
+            next_player = self.opponent
+        else:
+            next_player = self.player_to_move
+
+        for move in board.get_move_list():
+            child_node = Node(next_player, move, node)
+            node.add_child(child_node)
+
+    def select_random_move(self, board):
+        movelist = board.get_move_list()
+        idx_move = np.random.randint(len(movelist))
+        return movelist[idx_move]
+
+    def rollout_policy(self, board):
+        return self.select_random_move(board)
+
+    def rollout(self, leaf, board):
+
+        board_hyp = copy.deepcopy(board)
+
+        current_player = leaf.player_to_move
+        while not board_hyp.is_game_over():
+            move = self.rollout_policy(board_hyp)
+            board_hyp.set_piece(move, current_player)
+            
+            if current_player == self.player_to_move:
+                current_player = self.opponent
+            else:
+                current_player = self.player_to_move
+
+        if board_hyp.check_win(self.player_to_move):
+            return 1
+        elif board_hyp.check_win(self.opponent):
+            return 0
+        else: # draw
+            return 0.5
+
+    def update_node(self, node, result):
+        node.visited += 1
+        node.score += result
+        return node
+
+    def backpropagate(self, node, result):
+        if node.parent == None: # parent node
+            node = self.update_node(node, result)
+            return
+        node = self.update_node(node, result)
+        self.backpropagate(node.parent, result)
+
+    def search(self, board, player_to_move, opponent):
+        self.player_to_move = player_to_move
+        self.opponent = opponent
+
+        self.root = Node(self.player_to_move)
+        self.root_board = copy.deepcopy(board)
+
+        t0 = time.time()
+        i = 0
+        while time.time()-t0 < self.maxtime and i < self.maxiter:
+            leaf, board = self.select()
+            simulation_result = self.rollout(leaf, board)
+            self.backpropagate(leaf, simulation_result)
+            i+=1
+
+        best_child = self.get_most_visited_child(self.root)
+        best_move = best_child.move
+
+        return best_move
+
+    def get_tree_size(self):
+        size = 0
+
+        queue = [self.root]
+
+        while queue:
+            node = queue.pop()
+            
+            for child in node.children:
+                queue.append(child)
+            
+            size += 1
+
+        return size

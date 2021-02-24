@@ -251,6 +251,26 @@ def test_hexbot():
         board.print()
 
 
+def test_mcts():
+
+    board = HexBoard(size=4)
+
+    robot1 = HexRobot('mcts', board.BLUE, board.RED, maxtime=10, maxiter=1e9, cp=1)
+    robot2 = HexRobot('alpha-beta', board.RED, board.BLUE, depth=5)
+
+    board.print()
+    while True:
+        robot2.make_move(board)
+        board.print()
+        if board.check_win(board.RED):
+            print('blue wins')
+            break
+        robot1.make_move(board)
+        board.print()
+        if board.check_win(board.BLUE):
+            print('red wins')
+            break
+
 if __name__ == '__main__':
     # test_boarder()
     # test_dijkstra()
@@ -258,5 +278,6 @@ if __name__ == '__main__':
     # test_win()
     # test_alphabeta()
     # test_tt_alphabeta()
-    test_iterative_deepening()
+    # test_iterative_deepening()
     # test_hexbot()
+    test_mcts()
