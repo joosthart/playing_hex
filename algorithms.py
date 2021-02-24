@@ -150,13 +150,16 @@ class AlphaBeta:
 
 class TranspositionTablesAlphaBeta:
 
-    def __init__(self, heuristic = shortest_path_heuristic):
+    def __init__(self, heuristic=shortest_path_heuristic, maxtime=5, maxdepth=9):
         self.tt = {}
         self.cutoffs = 0
         self.nodes_searched = 0
         self.tt_lookups = 0
         self.search_depth = 0
+
         self.heuristic = heuristic
+        self.maxtime = maxtime
+        self.maxdepth = maxdepth
 
     def reset(self):
         self.__init__(self.heuristic)
@@ -203,7 +206,7 @@ class TranspositionTablesAlphaBeta:
 
         self.tt[state_key] = (move, depth, g, state)
 
-    def _move_ordering(self, all_moves, best_moves):
+    def move_ordering(self, all_moves, best_moves):
         
         for m in best_moves:
             if m in all_moves:
@@ -222,15 +225,16 @@ class TranspositionTablesAlphaBeta:
         
         self.nodes_searched += 1
 
+        board_hyp = copy.deepcopy(board)
+
         best_move = []
         if depth <= 0:
             g = self.heuristic(board, player=player, opponent=opponent)
-            board_hyp = copy.deepcopy(board)
             return [], g
 
         elif maximize:
             g = -sys.maxsize
-            ordered_move_list = self._move_ordering(
+            ordered_move_list = self.move_ordering(
                 board.get_move_list(), tt_best_move
             )
 
@@ -263,7 +267,7 @@ class TranspositionTablesAlphaBeta:
 
         else:  # Minimize
             g = sys.maxsize
-            ordered_move_list = self._move_ordering(
+            ordered_move_list = self.move_ordering(
                 board.get_move_list(), tt_best_move
             )
             for move in ordered_move_list:
@@ -297,12 +301,14 @@ class TranspositionTablesAlphaBeta:
 
         return best_move, g
 
-    def iterative_deepening(self, board, player, opponent, maxtime, maxdepth=9):
+    def iterative_deepening(self, board, player, opponent):
+
+        self.reset()
 
         t0 = time.time()
 
         # TODO This will always exceed the timeout
-        while self.search_depth < maxdepth and time.time() - t0 < maxtime:
+        while self.search_depth < self.maxdepth and time.time() - t0 < self.maxtime:
             self.search_depth += 1
             move, g = self.search(
                 board, 
