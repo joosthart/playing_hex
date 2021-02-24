@@ -3,7 +3,6 @@ import sys
 import time
 
 import numpy as np
-from numpy.core.numeric import roll
 
 def dijkstra(board, player):
 
@@ -369,13 +368,11 @@ class MonteCarloTreeSearch:
             c.score/c.visited + self.cp * np.sqrt(np.log(node.visited/c.visited))
             for c in node.children
         ]
-        
         # Select best child randomly out equally good children
         return node.children[np.argmax(weights == np.amax(weights))]
 
     def get_most_visited_child(self, node):
         visits = [c.visited for c in node.children]
-
         # Select best child randomly out equally good children
         return node.children[np.argmax(visits == np.amax(visits))]
 
@@ -386,7 +383,6 @@ class MonteCarloTreeSearch:
             board.set_piece(node.move, self.player_to_move)
 
     def select(self):
-        
         node = self.root
         board_hyp = copy.deepcopy(self.root_board)
 
@@ -425,7 +421,6 @@ class MonteCarloTreeSearch:
         return self.select_random_move(board)
 
     def rollout(self, leaf, board):
-
         board_hyp = copy.deepcopy(board)
 
         current_player = leaf.player_to_move
@@ -481,7 +476,6 @@ class MonteCarloTreeSearch:
         size = 0
 
         queue = [self.root]
-
         while queue:
             node = queue.pop()
             
