@@ -1,10 +1,10 @@
 import sys
 
-from game import HexBoard
-from algorithms import (
+from src.game import HexBoard
+from src.algorithms import (
     dijkstra, TranspositionTablesAlphaBeta, AlphaBeta
 )
-from robot import HexRobot
+from src.robot import HexRobot
 
 def test_boarder():
     board = HexBoard(size=3)
@@ -15,7 +15,6 @@ def test_boarder():
     board.print()
 
 def test_dijkstra():
-
     board = HexBoard(size=6)
 
     board.set_piece((2, 0), board.BLUE)
@@ -28,7 +27,6 @@ def test_dijkstra():
     board.set_piece((3, 1), board.RED)
     board.set_piece((1, 2), board.RED)
 
-
     dist_blue = dijkstra(board, board.BLUE)
     dist_red  = dijkstra(board, board.RED)
     print(80*'-')
@@ -39,7 +37,6 @@ def test_dijkstra():
     board.print()
 
 def test_neighbors():
-
     board = HexBoard(size=5)
 
     for i in board.get_neighbors((0, 2)):
@@ -49,7 +46,6 @@ def test_neighbors():
 
 
 def test_win():
-
     board = HexBoard(size=5)
 
     for i in range(5):
@@ -253,10 +249,10 @@ def test_hexbot():
 
 def test_mcts_vs_abid():
 
-    board = HexBoard(size=4)
+    board = HexBoard(size=6)
 
-    robot1 = HexRobot('mcts', board.BLUE, board.RED, maxtime=5, maxiter=1e9, cp=1)
-    robot2 = HexRobot('alpha-beta-iterative-deepening', board.RED, board.BLUE, maxtime=5)
+    robot1 = HexRobot('mcts', board.BLUE, board.RED, maxtime=15, maxiter=1e9, cp=1)
+    robot2 = HexRobot('alpha-beta-iterative-deepening', board.RED, board.BLUE, maxtime=3)
 
     board.print()
     while True:
@@ -280,4 +276,5 @@ if __name__ == '__main__':
     # test_tt_alphabeta()
     # test_iterative_deepening()
     # test_hexbot()
-    test_mcts_vs_abid()
+    # test_mcts_vs_abid()
+    pass

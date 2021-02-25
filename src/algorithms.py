@@ -4,8 +4,22 @@ import time
 
 import numpy as np
 
-def dijkstra(board, player):
+from src.utils import Node
 
+def dijkstra(board, player):
+    """Dijkstra algorithm to find shortest path on a Hex board for a given 
+    palyer.
+
+    Args:
+        board (obj): game.HexBoard object
+        player (int): value of player on board
+
+    Raises:
+        ValueError: Unkown player value
+
+    Returns:
+        int: Length of shortest path
+    """
     if player == board.BLUE:
         initial = (0, -sys.maxsize)
         endstate = [(i, board.size-1) for i in range(board.size)]
@@ -15,7 +29,7 @@ def dijkstra(board, player):
         endstate = [(board.size-1, i) for i in range(board.size)]
         opponent = board.BLUE
     else:
-        raise RuntimeError
+        raise ValueError('Unkown player value {}'.format(player))
 
     visited = {}
     queue = {initial: 0}
@@ -52,6 +66,17 @@ def dijkstra(board, player):
 
 
 def shortest_path_heuristic(board, player, opponent):
+    """Calculate shortest paht heuristice for a given board state given two 
+    players. A bonus point is added to winning states.
+
+    Args:
+        board (obj): game.HexBoard object
+        player (int): value of player on board
+        opponent (int): value of opponent on board
+
+    Returns:
+        int: board heuristic reward
+    """
     shortest_path_player = dijkstra(board, player)
     shortest_path_opponent = dijkstra(board, opponent)
 
@@ -63,13 +88,14 @@ def shortest_path_heuristic(board, player, opponent):
     return -(shortest_path_player - shortest_path_opponent)
 
 
-def random_heuristic(board, **kwargs):
-    movelist = board.get_move_list()
-    idx_move = np.random.randint(len(movelist))
-    return movelist[idx_move]
+def random_heuristic(board):
+    return np.random.randint(2*board.size) - board.size
 
 class AlphaBeta:
-
+    """Alpha Beta pruning engine for Hex. Search methods finds the best move 
+    according to a given heuristic. Default heuristic is Dijkstra shortest path 
+    heuristic.
+    """
     def __init__(self, heuristic = shortest_path_heuristic):
         self.nodes_searched = 0
         self.cutoffs = 0
@@ -80,7 +106,21 @@ class AlphaBeta:
 
     def search(self, board, player, opponent, maximize=True, depth=3,
                alpha=-sys.maxsize, beta=sys.maxsize):
+        """Find the best move for a given board state using Alpha-Beta pruning.
 
+        Args:
+            board (obj): game.HexBoard object
+            player (int): value of player on board
+            opponent (int): value of opponent on board
+            maximize (bool, optional): if true, maximize current player, else, 
+                minimize. Defaults to True.
+            depth (int, optional): search depth. Defaults to 3.
+            alpha (int, optional): alpha value. Defaults to -sys.maxsize.
+            beta (int, optional): beta value. Defaults to sys.maxsize.
+
+        Returns:
+            (tuple, int): bestmove and score 
+        """
         # TODO: move this check outside method
         if len(board.get_move_list()) < depth:
             depth = len(board.get_move_list())
@@ -88,7 +128,7 @@ class AlphaBeta:
         self.nodes_searched += 1
         best_move = None
 
-        if depth <= 0:
+        if depth <= 0: # Reached a leaf node
             score = self.heuristic(board, player=player, opponent=opponent)
             return (None, score)
 
@@ -149,22 +189,37 @@ class AlphaBeta:
         return best_move, g
 
 class TranspositionTablesAlphaBeta:
-
+    """Enhanced AlphaBeta class with transpostion tables and iterative 
+    deepening.
+    """
     def __init__(self, heuristic=shortest_path_heuristic, maxtime=5, maxdepth=9):
-        self.tt = {}
+        """
+        Args:
+            heuristic (func, optional): Heuristic function. Defaults to 
+                shortest_path_heuristic.
+            maxtime (int, optional): max time iterative deepening in seconds. 
+                Defaults to 5.
+            maxdepth (int, optional): mac depth iterative deepening. Defaults to 
+                9.
+        """
+        self.heuristic = heuristic
+        self.maxtime = maxtime
+        self.maxdepth = maxdepth
+
+        
+        self.tt = {} # Transposition table
         self.cutoffs = 0
         self.nodes_searched = 0
         self.tt_lookups = 0
         self.search_depth = 0
 
-        self.heuristic = heuristic
-        self.maxtime = maxtime
-        self.maxdepth = maxdepth
-
     def reset(self):
         self.__init__(self.heuristic)
 
     def lookup(self, board, depth, alpha, beta):
+        """ Look up a board state in the transpostion table and return whether 
+        move found, the score of the state and the move to take in that state.
+        """
         state_key = board.hash_state()
 
         if state_key not in self.tt.keys():
@@ -173,7 +228,6 @@ class TranspositionTablesAlphaBeta:
         move, state_depth, g, state = self.tt[state_key]
 
         hit = False
-        # TODO look at this; I do not understand why/if this works
         if state_depth < depth:
             hit = True
         elif state_depth >= depth:
@@ -190,7 +244,8 @@ class TranspositionTablesAlphaBeta:
             return False, None, move
 
     def store(self, board, depth, move, g, alpha, beta):
-
+        """Store a board state in the transposition table
+        """
         state_key = board.hash_state()
 
         if depth <= 0 or alpha < g < beta:
@@ -207,7 +262,8 @@ class TranspositionTablesAlphaBeta:
         self.tt[state_key] = (move, depth, g, state)
 
     def move_ordering(self, all_moves, best_moves):
-        
+        """Order moves by moving best moves to begning of the list.
+        """
         for m in best_moves:
             if m in all_moves:
                 all_moves.insert(0, all_moves.pop(all_moves.index(m)))
@@ -216,7 +272,22 @@ class TranspositionTablesAlphaBeta:
 
     def search(self, board, player, opponent, maximize=True, depth=3,
                alpha=-sys.maxsize, beta=sys.maxsize):
+        """Find the best move for a given board state using Alpha-Beta pruning
+        enhanched with transposition tables.
 
+        Args:
+            board (obj): game.HexBoard object
+            player (int): value of player on board
+            opponent (int): value of opponent on board
+            maximize (bool, optional): if true, maximize current player, else, 
+                minimize. Defaults to True.
+            depth (int, optional): search depth. Defaults to 3.
+            alpha (int, optional): alpha value. Defaults to -sys.maxsize.
+            beta (int, optional): beta value. Defaults to sys.maxsize.
+
+        Returns:
+            (tuple, int): bestmove and score 
+        """
         hit, g, tt_best_move = self.lookup(board, depth, alpha, beta)
 
         if hit:
@@ -228,12 +299,13 @@ class TranspositionTablesAlphaBeta:
         board_hyp = copy.deepcopy(board)
 
         best_move = []
-        if depth <= 0:
+        if depth <= 0: # Reached a leaf node
             g = self.heuristic(board, player=player, opponent=opponent)
             return [], g
 
         elif maximize:
             g = -sys.maxsize
+            # order moves
             ordered_move_list = self.move_ordering(
                 board.get_move_list(), tt_best_move
             )
@@ -267,6 +339,7 @@ class TranspositionTablesAlphaBeta:
 
         else:  # Minimize
             g = sys.maxsize
+            # order moves
             ordered_move_list = self.move_ordering(
                 board.get_move_list(), tt_best_move
             )
@@ -302,7 +375,18 @@ class TranspositionTablesAlphaBeta:
         return best_move, g
 
     def iterative_deepening(self, board, player, opponent):
+        """Iterative deepening algorithm. 
+        
+        Note: the timout will always be exceeded by a few seconds.
 
+        Args:
+            board (obj): game.HexBoard object
+            player (int): value of player on board
+            opponent (int): value of opponent on board
+
+        Returns:
+            (tuple, int): best move and score
+        """
         self.reset()
 
         t0 = time.time()
@@ -319,6 +403,8 @@ class TranspositionTablesAlphaBeta:
         return move, g
 
     def print_summary(self):
+        """print summary of search.
+        """
         summary_txt = (
             '\n'
             'SUMMARY OF MOVE TAKING PROCESS:\n'
@@ -339,37 +425,24 @@ class TranspositionTablesAlphaBeta:
             )
         )
 
-class Node:
-    
-    def __init__(self, player_to_move, move=None, parent=None):
-        self.move = move
-        self.parent = parent
-        self.player_to_move = player_to_move
-
-        self.visited = 0
-        self.score = 0
-
-        self.children = []
-    
-    def add_child(self, child):
-        self.children.append(child)
-    
-    def is_fully_expanded(self):
-        if self.children and all(c.visited>0 for c in self.children):
-            return True
-        else:
-            return False
-
-
 class MonteCarloTreeSearch:
-
+    """Monte Carlo Tree Search algorithm for Hex.
+    """
     def __init__(self, maxiter=1000, maxtime=5, cp=1):
+        """
+        Args:
+            maxiter (int, optional): Maximum number of iterations. Defaults to 
+                1000.
+            maxtime (int, optional): Maximum time in seconds. Defaults to 5.
+            cp (int, optional): Cp parameter for MCTS algorithm. Defaults to 1.
+        """
         self.maxiter = maxiter
         self.maxtime = maxtime
-        self.cp = 1
+        self.cp = cp
 
     def best_child(self, node):
-        
+        """Calculate the best child for a given node.
+        """
         weights = [
             c.score/c.visited + self.cp * np.sqrt(np.log(node.visited/c.visited))
             for c in node.children
@@ -378,20 +451,27 @@ class MonteCarloTreeSearch:
         return node.children[np.argmax(weights == np.amax(weights))]
 
     def get_most_visited_child(self, node):
+        """Lookup the most visited child of a node.
+        """
         visits = [c.visited for c in node.children]
         # Select best child randomly out equally good children
         return node.children[np.argmax(visits == np.amax(visits))]
 
     def make_node_move(self, node, board):
+        """Make the move of a node on the board.
+        """
         if node.player_to_move == self.player_to_move:
             board.set_piece(node.move, self.opponent)
         else:
             board.set_piece(node.move, self.player_to_move)
 
     def select(self):
+        """Select the next node to explore.
+        """
         node = self.root
         board_hyp = copy.deepcopy(self.root_board)
 
+        # Traverse down the tree until unexplored node (leaf) is found.
         while node.is_fully_expanded():
             node = self.best_child(node)
             self.make_node_move(node, board_hyp)
@@ -399,9 +479,11 @@ class MonteCarloTreeSearch:
             if node.visited == 0:
                 return node, board_hyp
         
+        # If the node has no children, expand the node.
         if not node.children:
             self.expand(node, board_hyp)
         
+        # Randomly pick a child
         if node.children:
             node = np.random.choice(node.children)
             self.make_node_move(node, board_hyp)
@@ -409,6 +491,8 @@ class MonteCarloTreeSearch:
         return node, board_hyp
 
     def expand(self, node, board):
+        """Expand a node.
+        """
         if node.player_to_move == self.player_to_move:
             next_player = self.opponent
         else:
@@ -419,6 +503,8 @@ class MonteCarloTreeSearch:
             node.add_child(child_node)
 
     def select_random_move(self, board):
+        """Select Random move.
+        """
         movelist = board.get_move_list()
         idx_move = np.random.randint(len(movelist))
         return movelist[idx_move]
@@ -427,6 +513,8 @@ class MonteCarloTreeSearch:
         return self.select_random_move(board)
 
     def rollout(self, leaf, board):
+        """Rollout/playout a given board state using the rollout_policy.
+        """
         board_hyp = copy.deepcopy(board)
 
         current_player = leaf.player_to_move
@@ -447,18 +535,32 @@ class MonteCarloTreeSearch:
             return 0.5
 
     def update_node(self, node, result):
+        """Update node value.
+        """
         node.visited += 1
         node.score += result
         return node
 
     def backpropagate(self, node, result):
-        if node.parent == None: # parent node
-            node = self.update_node(node, result)
-            return
+        """Recursively move up the tree while updating node values.
+        """
         node = self.update_node(node, result)
-        self.backpropagate(node.parent, result)
+        if node.parent == None: # parent node
+            return
+        else: # Move one node up
+            self.backpropagate(node.parent, result)
 
     def search(self, board, player_to_move, opponent):
+        """Find the best move for a player given a board state.
+
+        Args:
+            board (obj): game.HexBoard object
+            player (int): value of player on board
+            opponent (int): value of opponent on board
+
+        Returns:
+            tuple: best move
+        """
         self.player_to_move = player_to_move
         self.opponent = opponent
 
@@ -479,6 +581,8 @@ class MonteCarloTreeSearch:
         return best_move
 
     def get_tree_size(self):
+        """Calculate the tree size.
+        """
         size = 0
 
         queue = [self.root]
