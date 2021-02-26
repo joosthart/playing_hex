@@ -54,12 +54,12 @@ def elo_explain_experiments():
     fig, ax1 = plt.subplots()
     ax1.plot(x, Gaussian1D(mean=10, stddev=10)(x), label='Diff. Gaussian')
     ax1.fill_between(
-        np.arange(-20, 0, 0.01), 
+        np.arange(-20, 0, 0.01),
         Gaussian1D(
             mean=10,
             stddev=10
-        )(np.arange(-20, 0, 0.01)), 
-        color='blue', 
+        )(np.arange(-20, 0, 0.01)),
+        color='blue',
         alpha=0.3
     )
 
@@ -211,13 +211,13 @@ def mtcs_experiments():
     plt.savefig("./output/ELOrating_3_1.pdf")
     plt.close()
 
-    cps = np.array([0.1, 0.7, 1, 3])
+    cps = np.array([0.1, 0.3, 0.5, 0.7, 1, 3])
     ratings_saved = np.empty((len(cps), 2), dtype=np.object)
 
     for idx, cp in enumerate(cps):
         print("$C_p$: ", cp)
         save = evaluate(['mcts', 'alpha-beta-iterative-deepening'],
-                        5, amount=24, t_run=5, N=1e8, cp=cp)
+                        5, amount=24, t_run=5, N=5e2, cp=cp)
         ratings_saved[idx] = save[-2:]
 
     plt.figure()
@@ -225,8 +225,8 @@ def mtcs_experiments():
                  [ratings_saved[:, 0][i].mu for i in range(len(cps))],
                  yerr=[2*ratings_saved[:, 0]
                        [i].sigma for i in range(len(cps))],
-                 marker='o', label='Monte Carlo Tree Search ($N = 10^{10}$)', ls='', capsize=5)
-    plt.errorbar(cps+0.05,
+                 marker='o', label='Monte Carlo Tree Search ($N = 500$)', ls='', capsize=5)
+    plt.errorbar(cps,
                  [ratings_saved[:, 1][i].mu for i in range(len(cps))],
                  yerr=[2*ratings_saved[:, 1]
                        [i].sigma for i in range(len(cps))],
@@ -242,6 +242,6 @@ def mtcs_experiments():
 def all_experiments():
     """Run all experiments used to generate report
     """
-    # elo_explain_experiments()
-    # alpha_beta_experiments()
+    elo_explain_experiments()
+    alpha_beta_experiments()
     mtcs_experiments()

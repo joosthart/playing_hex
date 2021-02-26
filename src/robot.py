@@ -148,4 +148,4 @@ class HexRobot:
 
     def print_stats(self):
         self.engine.print_summary()
-        print('ELPASED TIME: {:.0f}s\n'.format(self.computation_time))
+        print('ELPASED TIME: {:.2f}s\n'.format(self.computation_time))

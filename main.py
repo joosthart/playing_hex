@@ -33,7 +33,6 @@ parser.add_argument(
     action='store_true', 
     help='Play against Robot using MCTS algorithm.'
 )
-
 parser.add_argument(
     '-s', '--board-size' ,
     default=5,
@@ -54,13 +53,13 @@ parser.add_argument(
 )
 parser.add_argument(
     '-cp' ,
-    default=1,
+    default=0.3,
     type=int,
     help='Cp parmaeter for MCTS.'
 )
 parser.add_argument(
     '-i', '--max-iterations' ,
-    default=10000,
+    default=500,
     type=int,
     help='Maximum iterations of MCTS.'
 )

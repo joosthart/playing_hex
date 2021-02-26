@@ -251,8 +251,12 @@ def test_mcts_vs_abid():
 
     board = HexBoard(size=6)
 
-    robot1 = HexRobot('mcts', board.BLUE, board.RED, maxtime=15, maxiter=1e9, cp=1)
-    robot2 = HexRobot('alpha-beta-iterative-deepening', board.RED, board.BLUE, maxtime=3)
+    robot1 = HexRobot(
+        'mcts', board.BLUE, board.RED, maxtime=15, maxiter=1e9, cp=1
+    )
+    robot2 = HexRobot(
+        'alpha-beta-iterative-deepening', board.RED, board.BLUE, maxtime=3
+    )
 
     board.print()
     while True:
