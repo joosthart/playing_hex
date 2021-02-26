@@ -1,6 +1,7 @@
 import argparse
 
 from src.game import play
+from src.experiments import run
 
 parser = argparse.ArgumentParser(description='placeholder')
 
@@ -30,9 +31,14 @@ parser.add_argument(
 parser.add_argument(
     '-mcts', '--monte-carlo-tree-search' ,
     action='store_true', 
-    help=(
-        'Play against Robot using MCTS algorithm.'
-    )
+    help='Play against Robot using MCTS algorithm.'
+)
+
+parser.add_argument(
+    '-s', '--board-size' ,
+    default=5,
+    type=int,
+    help='Board size (max 9).'
 )
 parser.add_argument(
     '-d', '--depth' ,
@@ -47,7 +53,7 @@ parser.add_argument(
     help='Robot maximum search time.'
 )
 parser.add_argument(
-    '--cp' ,
+    '-cp' ,
     default=1,
     type=int,
     help='Cp parmaeter for MCTS.'
@@ -58,12 +64,7 @@ parser.add_argument(
     type=int,
     help='Maximum iterations of MCTS.'
 )
-parser.add_argument(
-    '-s', '--board-size' ,
-    default=5,
-    type=int,
-    help='Board size (max 9).'
-)
+
 
 
 args = parser.parse_args()
@@ -71,8 +72,7 @@ args = parser.parse_args()
 if __name__ == '__main__':
 
     if args.run_experiments:
-        # Run experiments
-        pass
+        run.all_experiments()
 
     elif args.play:
         if args.alpha_beta:
@@ -83,7 +83,7 @@ if __name__ == '__main__':
             algorithm = 'mcts'
         else:
             algorithm = 'random'
-        
+
         kwargs = {
             'depth': args.depth,
             'maxdepth': args.depth,

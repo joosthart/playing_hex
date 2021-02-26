@@ -43,10 +43,10 @@ class HexRobot:
             self.maxtime = kwargs.get('maxtime')
 
             if not self.maxdepth:
-                self.maxdepth = 9
+                self.maxdepth = 4
 
             if not self.maxtime:
-                self.maxtime = 5
+                self.maxtime = 2.5
 
             if self.heuristic:
                 self.engine = TranspositionTablesAlphaBeta(
@@ -66,7 +66,7 @@ class HexRobot:
             self.cp = kwargs.get('cp')
 
             if not self.maxiter:
-                self.maxiter = 10000
+                self.maxiter = 1000
             if not self.maxtime:
                 self.maxtime = 5
             if not self.cp:
@@ -145,3 +145,7 @@ class HexRobot:
     def get_computation_time(self):
         """Return the computation time of previous move."""
         return self.computation_time
+
+    def print_stats(self):
+        self.engine.print_summary()
+        print('ELPASED TIME: {:.0f}s\n'.format(self.computation_time))

@@ -42,12 +42,13 @@ All experiments can be run as follows:
 ```
 python main.py -r
 ```
-This will save results of the experiments in the `output` folder. **Note, running all our experiments can take up to 2 hours.**
+This will save results of the experiments in the `output` folder. **Note, running all our experiments can take up to a few hours.**
 
 ## Acknowledgements
 We had help from some very good blogs and code examples. Below a list of the most helpful ones.
 
 - https://github.com/duilio/c4
 - https://github.com/kenjyoung/mopyhex
+- https://gsurma.medium.com/hex-creating-intelligent-adversaries-part-2-heuristics-dijkstras-algorithm-597e4dcacf93
 - https://int8.io/monte-carlo-tree-search-beginners-guide/
 

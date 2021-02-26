@@ -1,4 +1,5 @@
 import sys
+import os
 import warnings
 
 import numpy as np
@@ -234,6 +235,8 @@ def play(algorithm, board_size, kwargs):
     human = HumanClient(board.BLUE)
     robot = HexRobot(algorithm, board.RED, board.BLUE, **kwargs)
 
+    os.system('clear')
+
     print('Let the game begin!')
     print(
         'The human is playing as \"{}\" and the robot as \"{}\".'.format(
@@ -247,11 +250,16 @@ def play(algorithm, board_size, kwargs):
 
     while not board.is_game_over():
         human.make_move(board)
+        os.system('clear')
         board.print()
         if board.is_game_over():
             break
+
+        print('Robot is thinking...')
         robot.make_move(board)
+        os.system('clear')
         board.print()
+        robot.print_stats()
         if board.is_game_over():
             break
     

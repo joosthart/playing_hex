@@ -102,7 +102,7 @@ class AlphaBeta:
         self.heuristic = heuristic
 
     def reset(self):
-        self.__init__()
+        self.__init__(heuristic=self.heuristic)
 
     def search(self, board, player, opponent, maximize=True, depth=3,
                alpha=-sys.maxsize, beta=sys.maxsize):
@@ -187,6 +187,25 @@ class AlphaBeta:
                     beta = g
 
         return best_move, g
+    
+    def print_summary(self):
+        """print summary of search.
+        """
+        summary_txt = (
+            '\n'
+            'SUMMARY OF MOVE TAKING PROCESS:\n'
+            '-----------------------------------------------------'+'\n'
+            'Nodes searched:              | {nodes_searched}\n'
+            'Alpha-Beta pruning cutoffs:  | {cutoffs}\n'
+            '-----------------------------------------------------'+'\n'
+        )
+        
+        print(
+            summary_txt.format(
+                nodes_searched=self.nodes_searched,
+                cutoffs=self.cutoffs,
+            )
+        )
 
 class TranspositionTablesAlphaBeta:
     """Enhanced AlphaBeta class with transpostion tables and iterative 
@@ -205,16 +224,19 @@ class TranspositionTablesAlphaBeta:
         self.heuristic = heuristic
         self.maxtime = maxtime
         self.maxdepth = maxdepth
-
         
         self.tt = {} # Transposition table
         self.cutoffs = 0
         self.nodes_searched = 0
         self.tt_lookups = 0
-        self.search_depth = 0
+        self.search_depth = 1
 
     def reset(self):
-        self.__init__(self.heuristic)
+        self.__init__(
+            heuristic=self.heuristic, 
+            maxtime=self.maxtime, 
+            maxdepth=self.maxdepth
+        )
 
     def lookup(self, board, depth, alpha, beta):
         """ Look up a board state in the transpostion table and return whether 
@@ -387,19 +409,22 @@ class TranspositionTablesAlphaBeta:
         Returns:
             (tuple, int): best move and score
         """
+
         self.reset()
 
         t0 = time.time()
 
         # TODO This will always exceed the timeout
-        while self.search_depth < self.maxdepth and time.time() - t0 < self.maxtime:
-            self.search_depth += 1
+        while self.search_depth <= self.maxdepth and time.time() - t0 < self.maxtime:
             move, g = self.search(
                 board, 
                 player, 
                 opponent, 
                 depth=self.search_depth
             )
+            self.search_depth += 1
+        self.search_depth -= 1
+        
         return move, g
 
     def print_summary(self):
@@ -595,3 +620,20 @@ class MonteCarloTreeSearch:
             size += 1
 
         return size
+
+    def print_summary(self):
+        """print summary of search.
+        """
+        summary_txt = (
+            '\n'
+            'SUMMARY OF MOVE TAKING PROCESS:\n'
+            '-----------------------------------------------------'+'\n'
+            'Search tree size             | {treesize}\n'
+            '-----------------------------------------------------'
+        )
+        
+        print(
+            summary_txt.format(
+                treesize=self.get_tree_size(),
+            )
+        )
